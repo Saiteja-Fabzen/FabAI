@@ -1,0 +1,100 @@
+{
+  "repoUrl": "https://github.com/Fabzentech-GitHub/Fabzen-website.git",
+  "websites": [
+    {
+      "name": "apperstudio",
+      "path": "Apperstudio",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "testCommand": "",
+      "port": 8000,
+      "dependencies": []
+    },
+    {
+      "name": "callbreak-empire",
+      "path": "CallbreakEmpire",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8001,
+      "dependencies": []
+    },
+    {
+      "name": "empire-games-brazil",
+      "path": "Empiregames-Brazil",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8002,
+      "dependencies": []
+    },
+    {
+      "name": "empiregames",
+      "path": "Empiregames",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8003,
+      "dependencies": []
+    },
+    {
+      "name": "fabzen",
+      "path": "Fabzen",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8004,
+      "dependencies": []
+    },
+    {
+      "name": "gamezenia",
+      "path": "Gamezenia",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8005,
+      "dependencies": []
+    },
+    {
+      "name": "growzenia",
+      "path": "GrowZenia",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8006,
+      "dependencies": []
+    },
+    {
+      "name": "ludo-empire",
+      "path": "LudoEmpiregames",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8007,
+      "dependencies": []
+    },
+    {
+      "name": "skillpatti-empire",
+      "path": "SkillpattiEmpire",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8008,
+      "dependencies": []
+    },
+    {
+      "name": "snake-and-ladders",
+      "path": "SnakeandLadders",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8009,
+      "dependencies": []
+    },
+    {
+      "name": "spindhan",
+      "path": "Spindhan",
+      "buildCommand": "echo 'No build needed - static HTML site'",
+      "devCommand": "python3 -m http.server",
+      "port": 8010,
+      "dependencies": []
+    }
+  ],
+  "buildCommands": {},
+  "deploymentBranches": {
+    "production": "main",
+    "staging": "staging",
+    "development": "dev"
+  }
+}
