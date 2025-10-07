@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   fabai-chatbot:
     build:
@@ -11,10 +9,13 @@ services:
       - "3000:3000"
     environment:
       - NODE_ENV=production
+      - MONOREPO_PATH=/app/monorepo
     env_file:
       - .env
     volumes:
-      # Mount volumes for persistent data if needed
+      # Mount the monorepo (change path to your actual monorepo location)
+      - ./Fabzen-website:/app/monorepo
+      # Mount logs for persistence
       - ./logs:/app/logs
     networks:
       - fabai-network

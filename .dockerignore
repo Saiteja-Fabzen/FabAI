@@ -5,9 +5,12 @@ npm-debug.log
 .env.local
 .git
 .gitignore
-README.md
 *.md
+!*.json
 .vscode
 .idea
 coverage
 .DS_Store
+.npm
+logs
+*.log
