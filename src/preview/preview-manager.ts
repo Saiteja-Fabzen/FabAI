@@ -23,15 +23,13 @@ export class PreviewManager {
 
       if (this.previewMode === 'server') {
         // Server mode: Use deployed server URL
-        // The URL will be based on branch name or task ID
-        const previewPath = branchName ? branchName.replace(/\//g, '-') : taskId;
-        url = `${this.previewBaseUrl}/${websiteName}/${previewPath}`;
+        // Just use the website name without branch path
+        url = `${this.previewBaseUrl}/${websiteName}`;
 
         logger.info('Preview using server mode', {
           taskId,
           websiteName,
           url,
-          branchName,
         });
       } else {
         // Ngrok mode: Start local server and create tunnel

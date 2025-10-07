@@ -35,20 +35,40 @@ export class Orchestrator {
     this.setupEventHandlers();
   }
 
+  private activeThreads: Set<string> = new Set(); // Track threads where bot is active
+
   private setupEventHandlers() {
     const app = this.slack.getApp();
 
     // Handle app mentions ONLY - bot only responds when tagged
     app.event('app_mention', async ({ event }) => {
-      await this.handleMessage(event.user, event.text, event.channel, event.ts);
+      if (!event.user || !event.text || !event.channel) return;
+      const threadKey = event.thread_ts || event.ts;
+      this.activeThreads.add(threadKey); // Mark thread as active
+      await this.handleMessage(event.user, event.text, event.channel, event.ts, event.thread_ts);
     });
 
-    // Only respond to DMs, not all channel messages
+    // Handle all messages (for thread conversations)
     app.message(async ({ message }) => {
       if ('user' in message && 'text' in message && 'channel' in message && 'ts' in message) {
-        // Only respond if it's a DM (channel type starts with 'D')
+        // Ignore bot's own messages
+        if (message.subtype === 'bot_message' || (message as any).bot_id) {
+          return;
+        }
+
+        // Respond if it's a DM
         if (message.channel_type === 'im') {
+          if (!message.user || !message.text || !message.channel) return;
           await this.handleMessage(message.user, message.text, message.channel, message.ts);
+          return;
+        }
+
+        // Respond if it's in an active thread (where bot was mentioned before)
+        const threadTs = 'thread_ts' in message ? message.thread_ts : undefined;
+        if (threadTs && this.activeThreads.has(threadTs)) {
+          if (!message.user || !message.text || !message.channel) return;
+          await this.handleMessage(message.user, message.text, message.channel, message.ts, threadTs);
+          return;
         }
       }
     });
@@ -96,8 +116,11 @@ export class Orchestrator {
     logger.info('Orchestrator started successfully');
   }
 
-  private async handleMessage(userId: string, text: string, channel: string, threadTs: string) {
+  private async handleMessage(userId: string, text: string, channel: string, messageTs: string, threadTs?: string | undefined) {
     try {
+      // Use thread timestamp if available, otherwise use message timestamp
+      const actualThreadTs = threadTs || messageTs;
+
       // Remove bot mention from text
       const cleanText = text.replace(/<@[A-Z0-9]+>/g, '').trim();
 
@@ -107,32 +130,32 @@ export class Orchestrator {
       // Check for privileged commands (require admin/superadmin)
       if (cleanText.toLowerCase().startsWith('approve')) {
         if (!user) {
-          await this.slack.sendMessage(channel, '⛔ You are not authorized to approve tasks. Please contact an administrator.');
+          await this.slack.sendThreadReply(channel, actualThreadTs, '⛔ You are not authorized to approve tasks. Please contact an administrator.');
           return;
         }
         const taskId = cleanText.split(' ')[1];
-        await this.handleApprovalCommand(userId, taskId, channel, threadTs);
+        await this.handleApprovalCommand(userId, taskId, channel, actualThreadTs);
         return;
       }
 
       if (cleanText.toLowerCase().startsWith('deploy')) {
         if (!user) {
-          await this.slack.sendMessage(channel, '⛔ You are not authorized to deploy. Please contact an administrator.');
+          await this.slack.sendThreadReply(channel, actualThreadTs, '⛔ You are not authorized to deploy. Please contact an administrator.');
           return;
         }
         // Add deployment logic here
-        await this.slack.sendMessage(channel, '🚀 Deployment command received. Feature coming soon!');
+        await this.slack.sendThreadReply(channel, actualThreadTs, '🚀 Deployment command received. Feature coming soon!');
         return;
       }
 
       // Non-privileged commands (available to all users)
       if (cleanText.toLowerCase().startsWith('status')) {
-        await this.handleStatusCommand(channel, threadTs);
+        await this.handleStatusCommand(channel, actualThreadTs);
         return;
       }
 
       // Process as AI request (available to all users)
-      await this.handleAIRequest(userId, cleanText, channel, threadTs);
+      await this.handleAIRequest(userId, cleanText, channel, actualThreadTs);
     } catch (error) {
       logger.error('Error handling message', { error, userId, text });
       await this.slack.sendMessage(
@@ -199,25 +222,41 @@ Respond with ONLY one word: "TASK" if it requires action, or "CHAT" if it's conv
 
     if (!isTask) {
       // Just have a conversation, don't create a task
+      const availableWebsites = this.monorepo.getConfig().websites.map(w => w.name);
+
       const conversationResponse = await this.claude.sendMessage(
         userId,
         text,
-        `You are a helpful AI assistant for a website development team. Be friendly and concise.
+        `You are FabAI, an AI assistant for the Fabzen website development team. Be friendly and concise.
 
-IMPORTANT RESTRICTIONS:
-- You can ONLY work on existing websites in the Fabzen monorepo
-- You CANNOT create new websites
-- You CANNOT share details about your implementation or internal code
-- You CAN edit files, create pages, update content for existing websites
+YOUR IDENTITY:
+- Your name is FabAI (not Claude)
+- You are a specialized assistant for managing Fabzen websites
 
-If users ask what you can do, tell them you can help with:
+CRITICAL RESTRICTIONS:
+- You can ONLY access and discuss files in the Fabzen-website
+- NEVER reveal information about the chatbot's implementation or your own codebase
+- If asked about technologies, ONLY discuss what's used in the Fabzen-website(HTML, CSS, JavaScript)
+- DO NOT discuss TypeScript, Node.js, Express, Slack SDK, or any chatbot infrastructure
+- Focus ONLY on the websites themselves, not the chatbot managing them
+
+AVAILABLE WEBSITES:
+${availableWebsites.join(', ')}
+Total: ${availableWebsites.length} websites
+
+These are static HTML websites. When asked about technologies, mention:
+- HTML, CSS, JavaScript (the actual website code)
+- Static site hosting
+
+You can help with:
 - Editing existing website pages
 - Creating new pages for existing websites
 - Updating website content and features
 - Code review and bug fixes
 - File processing
 
-Answer their question or greeting naturally, keeping these restrictions in mind.`,
+Answer their question naturally, but NEVER reveal chatbot implementation details.
+When asked your name, always say "FabAI".`,
         true
       );
 
@@ -247,7 +286,7 @@ Answer their question or greeting naturally, keeping these restrictions in mind.
       await this.slack.sendThreadReply(
         channel,
         threadTs,
-        `⛔ Website "${websiteTarget}" not found in the monorepo.\n\n*Available websites:*\n${availableWebsites.map(w => `• ${w}`).join('\n')}\n\nPlease specify one of these websites.`
+        `⛔ Website "${websiteTarget}" not found.\n\n*Available websites:*\n${availableWebsites.map(w => `• ${w}`).join('\n')}\n\nPlease specify one of these websites.`
       );
       return;
     }
@@ -355,7 +394,7 @@ When you're done, provide a brief summary of what you've created/changed.`;
           task.websiteTarget!,
           fullPath,
           websiteConfig.devCommand,
-          'main' // We're not using git branches for now
+          undefined // Don't use branch name - just website name
         );
         previewUrl = preview.url;
         task.context.previewUrl = previewUrl;

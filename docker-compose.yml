@@ -1,0 +1,24 @@
+version: '3.8'
+
+services:
+  fabai-chatbot:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: fabai-slack-chatbot
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+    env_file:
+      - .env
+    volumes:
+      # Mount volumes for persistent data if needed
+      - ./logs:/app/logs
+    networks:
+      - fabai-network
+
+networks:
+  fabai-network:
+    driver: bridge

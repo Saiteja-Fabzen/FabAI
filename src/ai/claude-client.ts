@@ -26,9 +26,12 @@ export class ClaudeClient {
 
       const prompt = systemPrompt ? `${systemPrompt}\n\n${message}` : message;
 
+      const workingDirectory = process.env.MONOREPO_PATH || './Fabzen-website';
+
       const options: Record<string, unknown> = {
         outputFormat: 'stream-json',
         permissionMode: 'bypassPermissions',
+        cwd: workingDirectory, // Restrict to monorepo directory only
       };
 
       // Resume session if available and history is requested
@@ -107,9 +110,12 @@ export class ClaudeClient {
       const session = this.sessions.get(userId);
       const prompt = systemPrompt ? `${systemPrompt}\n\n${message}` : message;
 
+      const workingDirectory = process.env.MONOREPO_PATH || './Fabzen-website';
+
       const options: Record<string, unknown> = {
         outputFormat: 'stream-json',
         permissionMode: 'bypassPermissions',
+        cwd: workingDirectory, // Restrict to monorepo directory only
       };
 
       if (session?.sessionId) {
